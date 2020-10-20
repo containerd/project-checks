@@ -1,0 +1,92 @@
+#   Copyright The containerd Authors.
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#       http://www.apache.org/licenses/LICENSE-2.0
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# containerd project checks Github CI Action.
+#
+# Example:
+#
+# jobs:
+#  project:
+#    name: Project Checks
+#    runs-on: ubuntu-18.04
+#    timeout-minutes: 5
+#
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          path: src/github.com/containerd/containerd
+#          fetch-depth: 100
+#
+#      - name: Project checks
+#        uses: containerd/project@v1
+#        with:
+#          working-directory: src/github.com/containerd/containerd
+#
+name: Project Checks
+description: Project checks commonly used across containerd org
+inputs:
+  working-directory:
+    required: true
+    description: Go project path to run checks in
+runs:
+  using: composite
+  steps:
+    - name: Set env
+      shell: bash
+      run: |
+        echo "GOPATH=${{ github.workspace }}" >> $GITHUB_ENV
+        echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+
+    - name: Install dependencies
+      shell: bash
+      env:
+        GO111MODULE: off
+      run: |
+        echo "::group::🚧 Get dependencies"
+        go get -u -v github.com/vbatts/git-validation
+        go get -u -v github.com/kunalkushwaha/ltag
+        go get -u -v github.com/LK4D4/vndr
+        echo "::endgroup::"
+
+    - name: DCO Checks
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GITHUB_COMMIT_URL: ${{ github.event.pull_request.commits_url }}
+        DCO_VERBOSITY: "-v"
+        DCO_RANGE: ""
+      run: |
+        echo "::group::👮 DCO checks"
+        set -x
+        if [ -z "${GITHUB_COMMIT_URL}" ]; then
+        DCO_RANGE=$(jq -r '.after + "..HEAD"' ${GITHUB_EVENT_PATH})
+        else
+        DCO_RANGE=$(curl ${GITHUB_COMMIT_URL} | jq -r '.[0].parents[0].sha + "..HEAD"')
+        fi
+        ${{ github.action_path }}/script/validate/dco
+        echo "::endgroup::"
+
+    - name: Validate file headers
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "::group::📚 File headers"
+        ${{ github.action_path }}/script/validate/fileheader ${{ github.action_path }}/
+        echo "::endgroup::"
+
+    - name: Validate vendor directory
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "::group::🚀 Vendor directory"
+        ${{ github.action_path }}/script/validate/vendor
+        echo "::endgroup::"
