@@ -20,12 +20,15 @@ set -eu -o pipefail
 if [ -f vendor.conf ]; then
   rm -rf vendor/
   vndr |& grep -v -i clone
-else
+elif [ -f go.mod ]; then
   go mod tidy
   if [ -d vendor ]; then
     rm -rf vendor/
     go mod vendor
   fi
+else
+  echo "No vendoring enabled in project"
+  exit 0
 fi
 
 DIFF_PATH="vendor/ go.mod go.sum"
