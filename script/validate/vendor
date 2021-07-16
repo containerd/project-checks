@@ -37,6 +37,7 @@ DIFF_PATH="vendor/ go.mod go.sum"
 #
 # shellcheck disable=SC2046
 DIFF=$(git status --porcelain -- $DIFF_PATH)
+DIFF_CONTENT=$(git diff -- $DIFF_PATH)
 
 if [ "$DIFF" ]; then
     echo
@@ -44,6 +45,8 @@ if [ "$DIFF" ]; then
     echo
     echo "$DIFF"
     echo
+    echo "Content of the diff:"
+    echo "$DIFF_CONTENT"
     exit 1
 else
     echo "$DIFF_PATH is correct"
