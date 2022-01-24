@@ -37,6 +37,9 @@ inputs:
   working-directory:
     required: true
     description: Go project path to run checks in
+  go-mod-tidy-flags:
+    required: false
+    description: go mod tidy flags, such as -compat=1.17
 runs:
   using: composite
   steps:
@@ -87,6 +90,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
+        export GO_MOD_TIDY_FLAGS="${{ inputs.go-mod-tidy-flags }}"
         echo "::group::🚀 Vendor directory"
         ${{ github.action_path }}/script/validate/vendor
         echo "::endgroup::"
