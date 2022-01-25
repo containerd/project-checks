@@ -21,7 +21,9 @@ if [ -f vendor.conf ]; then
   rm -rf vendor/
   vndr |& grep -v -i clone
 elif [ -f go.mod ]; then
-  go mod tidy
+  : "${GO_MOD_TIDY_FLAGS:=}"
+  # shellcheck disable=SC2086
+  go mod tidy $GO_MOD_TIDY_FLAGS
   if [ -d vendor ]; then
     rm -rf vendor/
     go mod vendor
