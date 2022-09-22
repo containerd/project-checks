@@ -40,6 +40,9 @@ inputs:
   go-mod-tidy-flags:
     required: false
     description: go mod tidy flags, such as -compat=1.17
+  repo-access-token:
+    required: false
+    description: token needed to access repository commits for private repos
 runs:
   using: composite
   steps:
@@ -65,15 +68,21 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       env:
         GITHUB_COMMIT_URL: ${{ github.event.pull_request.commits_url }}
+        REPO_ACCESS_TOKEN: ${{ inputs.repo-access-token }}
         DCO_VERBOSITY: "-v"
         DCO_RANGE: ""
       run: |
         echo "::group::👮 DCO checks"
         set -x
+        if [[ ! -z "${REPO_ACCESS_TOKEN}" ]]; then
+        HEADERS=(-H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${REPO_ACCESS_TOKEN}")
+        else
+        HEADERS=(-H "Accept: application/vnd.github+json")
+        fi
         if [ -z "${GITHUB_COMMIT_URL}" ]; then
         DCO_RANGE=$(jq -r '.after + "..HEAD"' ${GITHUB_EVENT_PATH})
         else
-        DCO_RANGE=$(curl ${GITHUB_COMMIT_URL} | jq -r '.[0].parents[0].sha + "..HEAD"')
+        DCO_RANGE=$(curl "${HEADERS[@]}" ${GITHUB_COMMIT_URL} | jq -r '.[0].parents[0].sha + "..HEAD"')
         fi
         ${{ github.action_path }}/script/validate/dco
         echo "::endgroup::"
