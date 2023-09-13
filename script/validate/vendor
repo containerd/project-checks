@@ -18,8 +18,8 @@
 set -eu -o pipefail
 
 if [ -f vendor.conf ]; then
-  rm -rf vendor/
-  vndr |& grep -v -i clone
+  echo "vndr is no longer supported by this check: use go mod vendor instead"
+  exit 1
 elif [ -f go.mod ]; then
   : "${GO_MOD_TIDY_FLAGS:=}"
   # shellcheck disable=SC2086

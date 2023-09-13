@@ -64,7 +64,6 @@ runs:
         echo "::group::🚧 Get dependencies"
         go install -v github.com/vbatts/git-validation@latest
         go install -v github.com/kunalkushwaha/ltag@latest
-        go install -v github.com/LK4D4/vndr@latest
         echo "::endgroup::"
 
     - name: DCO Checks
