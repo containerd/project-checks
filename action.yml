@@ -89,6 +89,15 @@ runs:
         fi
         ${{ github.action_path }}/script/validate/dco
         echo "::endgroup::"
+    
+    - name: Install go-licenses
+      shell: bash
+      run: go install github.com/google/go-licenses@v1.6.0
+      # the allow list corresponds to https://github.com/cncf/foundation/blob/e5db022a0009f4db52b89d9875640cf3137153fe/allowed-third-party-license-policy.md
+    - name: Check licenses
+      shell: bash
+      run: go-licenses check --include_tests  ${{ github.workspace }}/... --allowed_licenses=Apache-2.0,BSD-2-Clause,BSD-2-Clause-FreeBSD,BSD-3-Clause,MIT,ISC,Python-2.0,PostgreSQL,X11,Zlib
+
 
     - name: Validate file headers
       shell: bash
