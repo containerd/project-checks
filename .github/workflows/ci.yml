@@ -10,6 +10,27 @@ permissions:
   pull-requests: read
 
 jobs:
+  project:
+    name: Project Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: src/github.com/containerd/project-checks
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: false
+
+      - uses: containerd/project-checks@v1.1.0
+        if: github.repository == 'containerd/project-checks'
+        with:
+          working-directory: src/github.com/containerd/project-checks
+          repo-access-token: ${{ secrets.GITHUB_TOKEN }}
+       
   lint:
     name: Lint
     runs-on: ubuntu-latest
