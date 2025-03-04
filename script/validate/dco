@@ -26,7 +26,7 @@ fi
 verbosity="${DCO_VERBOSITY--v}"
 range=
 commit_range="${DCO_RANGE-}"
-[ -n "${commit_range}" ] && {
+[ ! -z "${commit_range}" ] && {
 	range="-range ${commit_range}"
 }
-GIT_CHECK_EXCLUDE="./vendor:./script/validate/template" git-validation "${verbosity}" "${range}" -run DCO,short-subject,dangling-whitespace
+GIT_CHECK_EXCLUDE="./vendor:./script/validate/template" git-validation ${verbosity} ${range} -run DCO,short-subject,dangling-whitespace
