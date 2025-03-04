@@ -47,6 +47,9 @@ inputs:
   repo-access-token:
     required: false
     description: token needed to access repository commits for private repos
+  go-licenses-ignore:
+    required: false
+    description: list of go modules to bypass the go-licenses checks. Do not set this, except when go-licenses hits a false positive.
 runs:
   using: composite
   steps:
@@ -95,8 +98,15 @@ runs:
     - name: Check licenses
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: go-licenses check --include_tests ./... --allowed_licenses=Apache-2.0,BSD-2-Clause,BSD-2-Clause-FreeBSD,BSD-3-Clause,MIT,ISC,Python-2.0,PostgreSQL,X11,Zlib
-
+      env:
+        GO_LICENSES_IGNORE: ${{ inputs.go-licenses-ignore }}
+      run: |
+        set -eux
+        flags=
+        for f in ${GO_LICENSES_IGNORE}; do
+          flags="${flags} --ignore ${f}"
+        done
+        go-licenses check --include_tests ./... --allowed_licenses=Apache-2.0,BSD-2-Clause,BSD-2-Clause-FreeBSD,BSD-3-Clause,MIT,ISC,Python-2.0,PostgreSQL,X11,Zlib ${flags}
 
     - name: Validate file headers
       shell: bash
