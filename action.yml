@@ -95,7 +95,7 @@ runs:
     - name: Check licenses
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: go-licenses check --include_tests  ${{ github.workspace }}/... --allowed_licenses=Apache-2.0,BSD-2-Clause,BSD-2-Clause-FreeBSD,BSD-3-Clause,MIT,ISC,Python-2.0,PostgreSQL,X11,Zlib
+      run: go-licenses check --include_tests ./... --allowed_licenses=Apache-2.0,BSD-2-Clause,BSD-2-Clause-FreeBSD,BSD-3-Clause,MIT,ISC,Python-2.0,PostgreSQL,X11,Zlib
 
 
     - name: Validate file headers
