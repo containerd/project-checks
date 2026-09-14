@@ -17,29 +17,27 @@
 # jobs:
 #  project:
 #    name: Project Checks
-#    runs-on: ubuntu-22.04
+#    runs-on: ubuntu-latest
 #    timeout-minutes: 5
 #
 #    steps:
-#      - uses: actions/setup-go@v3
+#      - uses: actions/checkout@v7
 #        with:
-#          go-version: '1.19'
-#
-#      - uses: actions/checkout@v3
-#        with:
-#          path: src/github.com/containerd/containerd
 #          fetch-depth: 100
 #
-#      - name: Project checks
-#        uses: containerd/project-checks@v1.1.0
+#      - uses: actions/setup-go@v7
 #        with:
-#          working-directory: src/github.com/containerd/containerd
+#          go-version: stable
+#
+#      - name: Project checks
+#        uses: containerd/project-checks@v1.2.3
 #
 name: Project Checks
 description: Project checks commonly used across containerd org
 inputs:
   working-directory:
-    required: true
+    required: false
+    default: .
     description: Go project path to run checks in
   go-mod-tidy-flags:
     required: false
@@ -55,13 +53,12 @@ runs:
   steps:
     - name: Set env
       shell: bash
-      run: |
-        echo "GOPATH=${{ github.workspace }}" >> $GITHUB_ENV
-        echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+      run: echo "${RUNNER_TEMP}/project-checks/bin" >> "$GITHUB_PATH"
 
     - name: Install dependencies
       shell: bash
       env:
+        GOBIN: ${{ runner.temp }}/project-checks/bin
         GO111MODULE: on
       run: |
         echo "::group::🚧 Get dependencies"
