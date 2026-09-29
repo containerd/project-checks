@@ -44,7 +44,8 @@ inputs:
     description: go mod tidy flags, such as -compat=1.17
   repo-access-token:
     required: false
-    description: token needed to access repository commits for private repos
+    description: "Deprecated: no longer used"
+    deprecationMessage: "repo-access-token is no longer needed and is ignored"
   go-licenses-ignore:
     required: false
     description: list of go modules to bypass the go-licenses checks. Do not set this, except when go-licenses hits a false positive.
@@ -71,22 +72,28 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
-        GITHUB_COMMIT_URL: ${{ github.event.pull_request.commits_url }}
-        REPO_ACCESS_TOKEN: ${{ inputs.repo-access-token }}
         DCO_VERBOSITY: "-v"
         DCO_RANGE: ""
       run: |
         echo "::group::👮 DCO checks"
         set -x
-        if [[ ! -z "${REPO_ACCESS_TOKEN}" ]]; then
-        HEADERS=(-H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${REPO_ACCESS_TOKEN}")
+        if jq -e '.pull_request' "${GITHUB_EVENT_PATH}" >/dev/null; then
+          DCO_RANGE=$(jq -r '.pull_request.base.sha + ".." + .pull_request.head.sha' "${GITHUB_EVENT_PATH}")
+        elif jq -e '.merge_group' "${GITHUB_EVENT_PATH}" >/dev/null; then
+          # merge_group payloads record the base commit in .merge_group.base_sha
+          # and do not have .before or .commits fields.
+          DCO_RANGE=$(jq -r '.merge_group.base_sha + "..HEAD"' "${GITHUB_EVENT_PATH}")
         else
-        HEADERS=(-H "Accept: application/vnd.github+json")
-        fi
-        if [ -z "${GITHUB_COMMIT_URL}" ]; then
-        DCO_RANGE=$(jq -r '.after + "..HEAD"' ${GITHUB_EVENT_PATH})
-        else
-        DCO_RANGE=$(curl "${HEADERS[@]}" ${GITHUB_COMMIT_URL} | jq -r '.[0].parents[0].sha + "..HEAD"')
+          # On push events, use .before..HEAD when .before is present in the
+          # checkout. For new branches (.before is all zeros) or force-pushes
+          # where .before is unreachable in a shallow clone, fall back to the
+          # parent of the first pushed commit.
+          BEFORE_SHA=$(jq -r '.before // empty' "${GITHUB_EVENT_PATH}")
+          if [ -n "${BEFORE_SHA}" ] && git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            DCO_RANGE="${BEFORE_SHA}..HEAD"
+          elif FIRST_COMMIT=$(jq -r '.commits[0].id // empty' "${GITHUB_EVENT_PATH}") && [ -n "${FIRST_COMMIT}" ] && git cat-file -e "${FIRST_COMMIT}~1^{commit}" 2>/dev/null; then
+            DCO_RANGE="${FIRST_COMMIT}~1..HEAD"
+          fi
         fi
         ${{ github.action_path }}/script/validate/dco
         echo "::endgroup::"
